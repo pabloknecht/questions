@@ -93,6 +93,7 @@ def compute_idfs(documents):
                 idf_dict[word] = compute_word_idf(word, documents)
 
     return idf_dict
+    
 
 def compute_word_idf(word, documents):
     """
@@ -125,8 +126,7 @@ def top_files(query, files, idfs, n):
         file_tfidf[filename] = sum([tf * idfs[word] for word, tf in word_tf.items()])
 
     sorted_file_tfidf = [filename for filename, tfidf in sorted(file_tfidf.items(), key=lambda x: x[1], reverse=True)]
-    print(">>> Files in order of tf-idf: " )
-    print(sorted_file_tfidf)
+
     return sorted_file_tfidf[:n]
 
 def top_sentences(query, sentences, idfs, n):
@@ -137,7 +137,33 @@ def top_sentences(query, sentences, idfs, n):
     the query, ranked according to idf. If there are ties, preference should
     be given to sentences that have a higher query term density.
     """
-    raise NotImplementedError
+    sentences_mwm = {}
+    for sentence, sentence_words in sentences.items():
+            for word in query:
+                if word in sentence_words:
+                    if sentence in sentences_mwm:
+                        sentences_mwm[sentence][0] = sentences_mwm[sentence][0] + idfs[word]
+                    else:
+                        sentences_mwm[sentence] = [idfs[word], query_term_density(query, sentences, sentence)]
+
+    sorted_sentences = [sentence for sentence, idf in sorted(sentences_mwm.items(), key=lambda x: (x[1][0], x[1][1]), reverse=True)]
+
+    return sorted_sentences[:n]
+
+
+def query_term_density(query, sentences, sentence):
+    """
+    Given a `query` (a set of words), `sentences` (a dictionary mapping
+    sentences to a list of their words), calculate the query term density.
+    Query term density is defined as the proportion of words in the 
+    sentence that are also words in the query. For example, if a sentence
+    has 10 words, 3 of which are in the query, then the sentence’s 
+    query term density is 0.3
+    """
+    words_in_sentence = len(sentences[sentence])
+    words_in_query = sum([1 for word in sentences[sentence] if word in query])
+
+    return words_in_query / words_in_sentence
 
 
 if __name__ == "__main__":
